@@ -1,0 +1,81 @@
+version: 2
+
+models:
+  - name: silver_customers
+    description: "Cleaned and validated customer data with business rules applied"
+    columns:
+      - name: customer_key
+        description: "Surrogate key for customer dimension"
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Natural key from source system"
+        tests:
+          - unique
+          - not_null
+      - name: email
+        description: "Standardized email address (lowercase, trimmed)"
+        tests:
+          - unique
+          - not_null
+      - name: full_name
+        description: "Concatenated first and last name"
+        tests:
+          - not_null
+      - name: first_name
+        tests:
+          - not_null
+      - name: last_name
+        tests:
+          - not_null
+        
+  - name: silver_orders
+    description: "Cleaned order data with standardized statuses and business logic"
+    columns:
+      - name: order_key
+        description: "Surrogate key for order fact"
+        tests:
+          - unique
+          - not_null
+      - name: customer_key
+        description: "Foreign key to silver_customers"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('silver_customers')
+              field: customer_key
+      - name: order_status
+        description: "Standardized order status"
+        tests:
+          - accepted_values:
+              values: ['completed', 'pending', 'cancelled', 'unknown']
+      - name: is_completed
+        description: "Boolean flag for completed orders"
+      - name: order_amount
+        description: "Order total amount"
+        tests:
+          - not_null
+        
+  - name: silver_payments
+    description: "Validated payment transactions with standardized payment methods"
+    columns:
+      - name: payment_key
+        description: "Surrogate key for payment fact"
+        tests:
+          - unique
+          - not_null
+      - name: order_key
+        description: "Foreign key to silver_orders"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('silver_orders')
+              field: order_key
+      - name: payment_method
+        description: "Standardized payment method"
+        tests:
+          - accepted_values:
+              values: ['credit_card', 'bank_transfer', 'paypal', 'cash', 'other']
+      - name: is_successful_payment
+        description: "Boolean indicating successful payment"
