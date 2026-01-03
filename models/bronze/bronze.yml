@@ -1,0 +1,96 @@
+version: 2
+
+sources:
+  - name: raw_ecommerce
+    description: "Raw e-commerce data loaded from source systems"
+    database: raw_data
+    schema: ecommerce
+    
+    # Freshness checks
+    config:
+      freshness:
+        warn_after: {count: 24, period: hour}
+        error_after: {count: 48, period: hour}
+    
+    # Source tables
+    tables:
+      - name: raw_customers
+        description: "Raw customer data from CRM system"
+        columns:
+          - name: id
+            description: "Primary key - customer ID"
+            tests:
+              - unique
+              - not_null
+          - name: email
+            description: "Customer email address"
+            tests:
+              - unique
+          - name: first_name
+            tests:
+              - not_null
+          - name: last_name
+            tests:
+              - not_null
+              
+      - name: raw_orders
+        description: "Raw order transactions from order management system"
+        columns:
+          - name: id
+            description: "Primary key - order ID"
+            tests:
+              - unique
+              - not_null
+          - name: user_id
+            description: "Foreign key to customers"
+            tests:
+              - not_null
+              - relationships:
+                  to: source('raw_ecommerce', 'raw_customers')
+                  field: id
+          - name: amount
+            description: "Order total amount"
+            tests:
+              - not_null
+                  
+      - name: raw_payments
+        description: "Payment transactions from payment gateway"
+        columns:
+          - name: id
+            description: "Primary key - payment ID"
+            tests:
+              - unique
+              - not_null
+          - name: order_id
+            description: "Foreign key to orders"
+            tests:
+              - not_null
+          - name: amount
+            tests:
+              - not_null
+
+models:
+  - name: bronze_customers
+    description: "Bronze layer - raw customer data with minimal transformation"
+    columns:
+      - name: customer_id
+        description: "Customer identifier"
+        tests:
+          - unique
+          - not_null
+    
+  - name: bronze_orders
+    description: "Bronze layer - raw order data"
+    columns:
+      - name: order_id
+        tests:
+          - unique
+          - not_null
+    
+  - name: bronze_payments
+    description: "Bronze layer - raw payment data"
+    columns:
+      - name: payment_id
+        tests:
+          - unique
+          - not_null
